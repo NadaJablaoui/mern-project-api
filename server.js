@@ -10,15 +10,12 @@ dotenv.config();
 
 const app = express();
 
-// Connect to Database
 connectDB();
 
-// Initialize Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request Logger (for debugging)
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();

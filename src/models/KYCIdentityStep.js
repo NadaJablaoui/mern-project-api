@@ -6,7 +6,7 @@ export const ValueType = {
   TEXT: 3,
 };
 
-export const KYCStepStatus = {
+export const KYCIdentityStepStatus = {
   TO_FILL: 0,
   TO_VERIFY: 1,
   VALIDATED: 2,
@@ -24,8 +24,8 @@ const kycStepSchema = new mongoose.Schema(
   {
     status: {
       type: Number,
-      enum: Object.values(KYCStepStatus),
-      default: KYCStepStatus.TO_FILL,
+      enum: Object.values(KYCIdentityStepStatus),
+      default: KYCIdentityStepStatus.TO_FILL,
     },
 
     value: [

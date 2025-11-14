@@ -1,13 +1,11 @@
-
 import express from 'express'
 import mongoose from 'mongoose'
 import KYCUserRequest, { KYCStatus } from '../models/KYCUserRequest.js'
-import KYCIdentityStep, { KYCStepStatus } from '../models/KYCIdentityStep.js'
+import KYCIdentityStep, { KYCIdentityStepStatus } from '../models/KYCIdentityStep.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 
 const router = express.Router()
 
-/* ---------- helpers ---------- */
 const buildFilterFromQuery = (query) => {
     const filter = {}
     if (query.status !== undefined) {
@@ -26,9 +24,7 @@ const buildFilterFromQuery = (query) => {
     return filter
 }
 
-/* ---------- routes ---------- */
-
-// POST /kyc-requests/:id/steps/:step_id   (auth required)
+// POST /api/kyc/kyc-requests/:id/steps/:step_id
 router.post('/kyc-request/:id/steps/:step_id', authMiddleware, async (req, res) => {
     try {
         const { id: kycRequestId, step_id: stepId } = req.params
@@ -36,7 +32,7 @@ router.post('/kyc-request/:id/steps/:step_id', authMiddleware, async (req, res) 
 
         const kycStep = await KYCIdentityStep.findOne({
             _id: stepId,
-            status: { $nin: [KYCStepStatus.TO_VERIFY, KYCStepStatus.VALIDATED] },
+            status: { $nin: [KYCIdentityStepStatus.TO_VERIFY, KYCIdentityStepStatus.VALIDATED] },
             kyc_user_request: kycRequestId,
         }).populate({
             path: 'kyc_user_request',
@@ -51,7 +47,7 @@ router.post('/kyc-request/:id/steps/:step_id', authMiddleware, async (req, res) 
         if (!kycRequest.user.equals(req.user._id)) return res.status(403).json({ errors: ['Forbidden'] })
 
         kycStep.value = value
-        kycStep.status = KYCStepStatus.TO_VERIFY
+        kycStep.status = KYCIdentityStepStatus.TO_VERIFY
         kycStep.submitted_at = new Date()
         await kycStep.save()
 
@@ -60,7 +56,7 @@ router.post('/kyc-request/:id/steps/:step_id', authMiddleware, async (req, res) 
             populate: { path: 'kyc_steps' },
         })
 
-        const anyToFill = kycStep.kyc_user_request.kyc_steps.some((s) => s.status === KYCStepStatus.TO_FILL)
+        const anyToFill = kycStep.kyc_user_request.kyc_steps.some((s) => s.status === KYCIdentityStepStatus.TO_FILL)
         if (!anyToFill) {
             kycStep.kyc_user_request.status = KYCStatus.TO_VERIFY
             kycStep.kyc_user_request.submitted_at = new Date()
@@ -79,7 +75,7 @@ router.post('/kyc-request/:id/steps/:step_id', authMiddleware, async (req, res) 
     }
 })
 
-// GET /kyc-requests   (admin or authorised)
+// GET /api/kyc/kyc-requests
 router.get('/kyc-requests', authMiddleware, async (req, res) => {
     try {
         const rawQuery = { ...req.query }
@@ -110,7 +106,7 @@ router.get('/kyc-requests', authMiddleware, async (req, res) => {
     }
 })
 
-// GET /kyc-requests/:id
+// GET /api/kyc/kyc-requests/:id
 router.get('/kyc-requests/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params
@@ -126,7 +122,7 @@ router.get('/kyc-requests/:id', authMiddleware, async (req, res) => {
     }
 })
 
-// PUT /kyc-requests/:id/steps/:step_id  (admin review step)
+// PUT /api/kyc/kyc-requests/:id/steps/:step_id
 router.put('/kyc-requests/:id/steps/:step_id', authMiddleware, async (req, res) => {
     try {
         const { id: requestId, step_id: stepId } = req.params
@@ -147,7 +143,7 @@ router.put('/kyc-requests/:id/steps/:step_id', authMiddleware, async (req, res) 
     }
 })
 
-// PUT /kyc-requests/:id  (admin review whole request)
+// PUT /api/kyc/kyc-requests/:id
 router.put('/kyc-requests/:id', async (req, res) => {
     try {
         const { id } = req.params

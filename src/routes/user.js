@@ -1,20 +1,17 @@
 // routes/user.routes.js
 import express from 'express'
 import bcrypt from 'bcrypt'
-import User from '../models/User.js'
+import User, { UserRole } from '../models/User.js'
 import { generatePresignedUploadUrl } from '../utils/s3.utils.js'
 import { S3FoldersKeys } from '../constants/s3Folders.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
+import  {fileRequestValidator}  from '../validators/fileRequest.validator.js'
 import Notification from '../models/Notification.js'
 import KYCUserRequest from '../models/KYCUserRequest.js'
 
 const router = express.Router()
 
-/* ---------- helpers ---------- */
-
-/* ---------- routes ---------- */
-
-// POST /api/users  (public registration)
+// POST /api/users
 router.post('/', async (req, res) => {
     try {
         const { firstname, lastname, email, phone, password } = req.body
@@ -48,7 +45,7 @@ router.post('/', async (req, res) => {
     }
 })
 
-// GET /api/users/me  (auth required)
+// GET /api/users/me
 router.get('/me', authMiddleware, async (req, res) => {
     try {
         const userId = req.user?._id ?? req.user?.id
@@ -63,14 +60,14 @@ router.get('/me', authMiddleware, async (req, res) => {
     }
 })
 
-// GET /api/users  (admin listing)
-router.get('/',authMiddleware, async (req, res) => {
+// GET /api/users
+router.get('/', authMiddleware, async (req, res) => {
     try {
         const page = Math.max(1, parseInt(req.query.page || '1', 10))
         const perPage = Math.min(100, Math.max(1, parseInt(req.query.per_page || '40', 10)))
         const skip = (page - 1) * perPage
 
-        const [data, total] = await Promise.all([User.find().skip(skip).limit(perPage).lean(), User.countDocuments()])
+        const [data, total] = await Promise.all([User.find({ role: UserRole.USER }).skip(skip).limit(perPage).lean(), User.countDocuments()])
 
         return res.status(200).json({ per_page: perPage, page, total, data })
     } catch (err) {
@@ -79,8 +76,8 @@ router.get('/',authMiddleware, async (req, res) => {
     }
 })
 
-// POST /api/users/me/files  (auth required)
-router.post('/me/files',authMiddleware, async (req, res) => {
+// POST /api/users/me/files
+router.post('/me/files', authMiddleware, fileRequestValidator, async (req, res) => {
     try {
         if (req.body.folder !== S3FoldersKeys.USER_AVATAR) {
             return res.status(400).json({ error: 'Invalid folder' })
@@ -95,8 +92,8 @@ router.post('/me/files',authMiddleware, async (req, res) => {
     }
 })
 
-// POST /api/users/me/kyc/person/files  (auth required)
-router.post('/me/kyc/person/files',authMiddleware, async (req, res) => {
+// POST /api/users/me/kyc/person/files
+router.post('/me/kyc/person/files', authMiddleware, fileRequestValidator, async (req, res) => {
     try {
         const allowed = [
             S3FoldersKeys.KYC_PERSON_FACE_PICTURE,
