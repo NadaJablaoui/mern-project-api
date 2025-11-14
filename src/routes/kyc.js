@@ -1,4 +1,4 @@
-// routes/kyc.routes.js
+
 import express from 'express'
 import mongoose from 'mongoose'
 import KYCUserRequest, { KYCStatus } from '../models/KYCUserRequest.js'
@@ -28,8 +28,8 @@ const buildFilterFromQuery = (query) => {
 
 /* ---------- routes ---------- */
 
-// POST /users/me/kyc/:id/steps/:step_id   (auth required)
-router.put('/users/me/kyc/:id/steps/:step_id', authMiddleware, async (req, res) => {
+// POST /kyc-requests/:id/steps/:step_id   (auth required)
+router.post('/kyc-request/:id/steps/:step_id', authMiddleware, async (req, res) => {
     try {
         const { id: kycRequestId, step_id: stepId } = req.params
         const { value, type } = req.body

@@ -3,7 +3,7 @@ import User from '../models/User.js'
 import dotenv from 'dotenv'
 dotenv.config()
 
-const JWT_SECRET = process.env.JWT_SECRET || 'please-change-this'
+const JWT_SECRET = process.env.JWT_SECRET
 
 const authMiddleware = async (req, res, next) => {
     try {
